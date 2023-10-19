@@ -73,8 +73,10 @@ class Deployer:
                     self.job()
                 elif ch == 2:
                     self.time = input("Enter time ex.\"23:59\" : ")
+                    schedule.every().day.at(self.time).do(self.job)
                     self.schedule_task()
             case 1 :
+                schedule.every().day.at(self.time).do(self.job)
                 self.schedule_task()
             case 2 :
                 self.job()
@@ -142,7 +144,6 @@ class Deployer:
         exit()
     
     def schedule_task(self):
-        schedule.every().day.at(self.time).do(self.job())
         while True:
             schedule.run_pending()
             tm.sleep(1)

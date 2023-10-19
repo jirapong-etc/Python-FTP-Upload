@@ -7,4 +7,4 @@
 - variables
 on <code>def __init__(self) -> None:</code>
   <pre>self.path : กำหนดที่อยู่ของไฟล์ที่ต้องการอัพโหลด
-self.ftp_dir : กำหนดที่อยู่ที่อยู่ปลายทางบนFTPที่ต้องการอัพโหลดไป</pre>
+  self.ftp_dir : กำหนดที่อยู่ที่อยู่ปลายทางบนFTPที่ต้องการอัพโหลดไป</pre>

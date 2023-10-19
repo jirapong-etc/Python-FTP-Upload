@@ -15,34 +15,38 @@ class Deployer:
         self.mode = 0 #0 none select, 1 at time, 2 upload now
 
         # List of file extensions to ignore
-        self.ignore_extensions = []
+        self.ignore_extensions = [
+            'env',
+            'vs',
+            'vscode',
+            'ignore',
+            'gitignore',
+            'gitattributes'
+        ]
 
         #List of file name to ignore
         self.ignore_files = [
-            '.\public\build',
-            '.\public\hot',
-            '.\public\storage',
-            '.\storage\*.key',
-            '.\.env',
-            '.\.env.backup',
-            '.\.env.production',
-            '.\.phpunit.result.cache',
-            '.\Homestead.json',
-            '.\Homestead.yaml',
-            '.\auth.json',
-            '.\npm-debug.log',
-            '.\yarn-error.log',
-            '.\.fleet',
-            '.\.idea',
-            '.\.vs',
-            '.\.vscode',
-            '.\.ignore',
-            '.\deployer.py',
-            '.\deploy.log',
-            '.\storage',
-            '.\tests',
-            '.\.editorconfig',
-            '.\deployer.py.example'
+            '.\\.env.backup',
+            '.\\.env.production',
+            '.\\.phpunit.result.cache',
+            '.\\.fleet',
+            '.\\.idea',
+            '.\\.editorconfig',
+            '.\\Homestead.json',
+            '.\\Homestead.yaml',
+            '.\\auth.json',
+            '.\\npm-debug.log',
+            '.\\yarn-error.log',
+            '.\\deployer.py',
+            '.\\deploy.log',
+            '.\\public\\hot',
+            # '.\\public\\storage',
+            # '.\\storage',
+            '.\\tests',
+            '.\\deployer.py.example',
+            # '.\\node_modules',
+            '.\\temps',
+            # '.\\vendor'
         ]
 
     def main(self, argv):
@@ -83,7 +87,7 @@ class Deployer:
 
     def checkIgnore(self, file_name):
         # Check if the file extension is in the ignore list
-        if os.path.splitext(file_name)[1] in self.ignore_extensions:
+        if file_name.split('.')[-1] in self.ignore_extensions:
             return True
         
         # Check if the file name is in the ignore list

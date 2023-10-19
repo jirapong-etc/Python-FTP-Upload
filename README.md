@@ -2,7 +2,7 @@
 - options
   <pre>-h    --help : View option list
 -n    --now : เริ่มอัพโหลดทันที
--t    --time : ตั้งเวลาในการอัพโหลด ตัวอย่างการใช้งาน : python deployer.py -t 23:59 | python deployer.py --time=23:59</pre>
+-t    --time : ตั้งเวลาในการอัพโหลด ตัวอย่างการใช้งาน : <code>python deployer.py -t 23:59 | python deployer.py --time=23:59</code></pre>
 
 - variables
 on <code>def __init__(self) -> None:</code>

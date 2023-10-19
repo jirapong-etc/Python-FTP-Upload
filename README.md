@@ -1,3 +1,4 @@
 ## Python-FTP-Upload
 -options
-  <pre>-h\t--help : View option list \n -n\t--now : Run upload now</pre>
+  <pre>-h    --help : View option list
+    -n    --now : Run upload now</pre>

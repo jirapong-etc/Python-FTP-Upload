@@ -1,10 +1,18 @@
-import os.path, os, sys, getopt
+import os.path, os, sys
+import argparse
 import schedule
 import time as tm
 from ftplib import FTP, error_perm
 
 class Deployer:
     def __init__(self) -> None:
+        parser = argparse.ArgumentParser(description="Basic FTP program by jirapong-etc")
+        parser.add_argument('-n', '--now', action="store_true", help="Immediately upload the files.")
+        parser.add_argument('-f', '--fresh', action="store_true", help="Remove files from the remote directory if they exist locally.")
+        parser.add_argument('-t', '--time', help="Schedule the upload at a specific time (format: 'HH:MM').")
+        parser.add_argument('-p', '--path', help="Upload only the specified file or directory.")
+        self.parser = parser.parse_args()
+        
         self.host = 'localhost'
         self.username = 'ftp_user'
         self.passwd = 'ftp_password'
@@ -31,6 +39,7 @@ class Deployer:
             '.\\.phpunit.result.cache',
             '.\\.fleet',
             '.\\.idea',
+            '.\\.git',
             '.\\.editorconfig',
             '.\\Homestead.json',
             '.\\Homestead.yaml',
@@ -40,50 +49,28 @@ class Deployer:
             '.\\deployer.py',
             '.\\deploy.log',
             '.\\public\\hot',
-            # '.\\public\\storage',
-            # '.\\storage',
+            '.\\public\\storage',
             '.\\tests',
             '.\\deployer.py.example',
-            # '.\\node_modules',
             '.\\temps',
-            # '.\\vendor'
+            '.\\node_modules',
+            '.\\storage',
+            '.\\vendor',
         ]
 
     def main(self, argv):
-        try:
-            opts, args = getopt.getopt(argv[1:], "hnt:", ["help", "now", "time="])
-        except getopt.GetoptError as err:
-            print(err)
-            sys.exit(2)
-        
-        for opt, arg in opts:
-            if opt in ('-h', '--help'):
-                print('usage python '+argv[0]+' [option] ... [-e | -d] ... [arg]')
-                print('options:')
-                print('    -n \t --now \t : Upload files now')
-                print('    -t \t --time \t : Set time to upload format is \'23:59\'')
-            elif opt in ("-n", "--now"):
-                self.mode = 2
-            elif opt in ("-t", "--time"):
-                self.mode = 1
-                self.time = arg
-        
-        match self.mode:
-            case 0 :
-                print("\n     1.Upload now.")
-                print("     2.Set upload time.")
-                ch = int(input("\nEnter number of choices. : "))
-                if ch == 1:
-                    self.job()
-                elif ch == 2:
-                    self.time = input("Enter time ex.\"23:59\" : ")
-                    schedule.every().day.at(self.time).do(self.job)
-                    self.schedule_task()
-            case 1 :
+        if(len(argv) == 1):
+            print("\n     1.Upload now.")
+            print("     2.Set upload time.")
+            ch = int(input("\nEnter number of choices. : "))
+            if ch == 1:
+                self.job()
+            elif ch == 2:
+                self.time = input("Enter time ex.\"23:59\" : ")
                 schedule.every().day.at(self.time).do(self.job)
                 self.schedule_task()
-            case 2 :
-                self.job()
+        else:
+            self.job()
 
     def checkIgnore(self, file_name):
         # Check if the file extension is in the ignore list
@@ -97,28 +84,35 @@ class Deployer:
         return False
 
     def placeFiles(self, ftp, path):
+        if self.parser.fresh:
+            for name in ftp.nlst():
+                local_path = os.path.join(path, name)
+                # Check ignore file
+                if self.checkIgnore(local_path):
+                    print(f"Ignore \t\t\t{local_path}")
+                    continue
+                elif not name in os.listdir(path):
+                    self.deleteFilesAndDirectory(ftp, name)
+
         for name in os.listdir(path):
             local_path = os.path.join(path, name)
 
             # Check ignore file
             if self.checkIgnore(local_path):
-                # writeLog("Ignore "+ local_path)
-                print("Ignore", local_path)
+                print(f"Ignore \t\t\t{local_path}")
                 continue
 
             if os.path.isfile(local_path):
                 # writeLog("STOR "+ local_path)
-                print("STOR", local_path)
+                print(f"STOR \t\t\t{local_path}")
 
                 # Use 'wb' mode to overwrite existing files
                 ftp.storbinary('STOR ' + name, open(local_path,'rb'))
 
             elif os.path.isdir(local_path):
-                # writeLog("MKD "+ local_path)
-                print("MKD", local_path)
-
                 try:
                     ftp.mkd(name)
+                    print(f"MKD \t\t\t{local_path}")
 
                 # ignore "directory already exists"
                 except error_perm as e:
@@ -126,8 +120,40 @@ class Deployer:
                         raise
 
                 ftp.cwd(name)
+                print(f"CWD \t\t\t{name}")
                 self.placeFiles(ftp, local_path)
                 ftp.cwd("..")
+                print("CWD \t\t\t..")
+
+
+    def deleteFilesAndDirectory(self, ftp, directory):
+        ftp_path = ftp.pwd()
+        ftp_path = "."+ftp_path.replace("/", "\\")
+        ftp_path = os.path.join(ftp_path, directory)
+
+        if self.checkIgnore(ftp_path):
+            return
+
+        try:
+            ftp.delete(directory)
+            print(f"Deleted file: \t\t{ftp_path}")
+        except error_perm:
+            # Change to the target directory
+            ftp.cwd(directory)
+
+            # List all files and directories in the directory
+            items = ftp.nlst()
+
+            for item in items:
+                self.deleteFilesAndDirectory(ftp, item)
+
+            ftp.cwd("..")
+            try:
+                ftp.rmd(directory)
+                print(f"Deleted directory: \t{ftp_path}")
+                print()
+            except error_perm as e:
+                pass
 
     def job(self):
         ftp = FTP()
@@ -135,11 +161,27 @@ class Deployer:
         ftp.login(self.username,self.passwd)
 
         # Change Directory To Project Folder
-        if self.ftp_dir == '.':
-            self.placeFiles(ftp, self.path)
+        if not self.parser.path is None:
+            if os.path.isfile(self.parser.path):
+                try:
+                    ftp.cwd(os.path.dirname(self.parser.path))
+                except error_perm:
+                    ftp.mkd(os.path.dirname(self.parser.path))
+                    ftp.cwd(os.path.dirname(self.parser.path))
+
+                print(os.path.dirname(self.parser.path))                
+                print(os.path.basename(self.parser.path))
+                
+                ftp.storbinary('STOR ' + os.path.basename(self.parser.path), open(self.parser.path, 'rb'))
+            else:
+                ftp.cwd(os.path.dirname(self.parser.path))
+                self.placeFiles(ftp, os.path.dirname(self.parser.path))
         else:
-            ftp.cwd(self.ftp_dir)
-            self.placeFiles(ftp, self.path)
+            if self.ftp_dir == '.':
+                self.placeFiles(ftp, self.path)
+            else:
+                ftp.cwd(self.ftp_dir)
+                self.placeFiles(ftp, self.path)
 
         ftp.quit()
 

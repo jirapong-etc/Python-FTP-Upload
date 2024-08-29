@@ -7,7 +7,6 @@ from ftplib import FTP, error_perm
 class Deployer:
     def __init__(self) -> None:
         parser = argparse.ArgumentParser(description="Basic FTP program by jirapong-etc")
-        parser.add_argument('-n', '--now', action="store_true", help="Immediately upload the files.")
         parser.add_argument('-f', '--fresh', action="store_true", help="Remove files from the remote directory if they exist locally.")
         parser.add_argument('-t', '--time', help="Schedule the upload at a specific time (format: 'HH:MM').")
         parser.add_argument('-p', '--path', help="Upload only the specified file or directory.")
@@ -53,22 +52,15 @@ class Deployer:
             '.\\tests',
             '.\\deployer.py.example',
             '.\\temps',
-            '.\\node_modules',
             '.\\storage',
+            '.\\node_modules',
             '.\\vendor',
         ]
 
     def main(self, argv):
-        if(len(argv) == 1):
-            print("\n     1.Upload now.")
-            print("     2.Set upload time.")
-            ch = int(input("\nEnter number of choices. : "))
-            if ch == 1:
-                self.job()
-            elif ch == 2:
-                self.time = input("Enter time ex.\"23:59\" : ")
-                schedule.every().day.at(self.time).do(self.job)
-                self.schedule_task()
+        if self.parser.time is not None:
+            schedule.every().day.at(self.parser.time).do(self.job)
+            self.schedule_task()
         else:
             self.job()
 
@@ -89,7 +81,7 @@ class Deployer:
                 local_path = os.path.join(path, name)
                 # Check ignore file
                 if self.checkIgnore(local_path):
-                    print(f"Ignore \t\t\t{local_path}")
+                    print(f"Ignore Delete \t\t{local_path}")
                     continue
                 elif not name in os.listdir(path):
                     self.deleteFilesAndDirectory(ftp, name)
@@ -99,7 +91,7 @@ class Deployer:
 
             # Check ignore file
             if self.checkIgnore(local_path):
-                print(f"Ignore \t\t\t{local_path}")
+                print(f"Ignore STOR \t\t{local_path}")
                 continue
 
             if os.path.isfile(local_path):
@@ -108,6 +100,9 @@ class Deployer:
 
                 # Use 'wb' mode to overwrite existing files
                 ftp.storbinary('STOR ' + name, open(local_path,'rb'))
+
+                # During times
+                tm.sleep(0.01)
 
             elif os.path.isdir(local_path):
                 try:
@@ -120,11 +115,10 @@ class Deployer:
                         raise
 
                 ftp.cwd(name)
-                print(f"CWD \t\t\t{name}")
+                print(f"CWD \t\t\t{local_path}")
                 self.placeFiles(ftp, local_path)
                 ftp.cwd("..")
-                print("CWD \t\t\t..")
-
+                print(f"CWD \t\t\t{path}")
 
     def deleteFilesAndDirectory(self, ftp, directory):
         ftp_path = ftp.pwd()
@@ -161,7 +155,7 @@ class Deployer:
         ftp.login(self.username,self.passwd)
 
         # Change Directory To Project Folder
-        if not self.parser.path is None:
+        if self.parser.path is not None:
             if os.path.isfile(self.parser.path):
                 try:
                     ftp.cwd(os.path.dirname(self.parser.path))
@@ -169,13 +163,15 @@ class Deployer:
                     ftp.mkd(os.path.dirname(self.parser.path))
                     ftp.cwd(os.path.dirname(self.parser.path))
 
-                print(os.path.dirname(self.parser.path))                
-                print(os.path.basename(self.parser.path))
-                
                 ftp.storbinary('STOR ' + os.path.basename(self.parser.path), open(self.parser.path, 'rb'))
+                print(f"STOR \t\t\t{self.parser.path}")
             else:
-                ftp.cwd(os.path.dirname(self.parser.path))
-                self.placeFiles(ftp, os.path.dirname(self.parser.path))
+                try:
+                    ftp.cwd(self.parser.path)
+                except error_perm:
+                    ftp.mkd(self.parser.path)
+                    ftp.cwd(self.parser.path)
+                self.placeFiles(ftp, self.parser.path)
         else:
             if self.ftp_dir == '.':
                 self.placeFiles(ftp, self.path)
@@ -185,7 +181,7 @@ class Deployer:
 
         ftp.quit()
 
-        if self.mode == 1:
+        if self.parser.time is not None:
             schedule.CancelJob
         exit()
     

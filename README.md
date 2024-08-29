@@ -45,7 +45,6 @@ self.port = 21
 You can run the script using Python. The script offers various options to customize the behavior:
 
 ### Command-Line Arguments
-- `-n`, `--now`: Immediately upload the files.
 - `-f`, `--fresh`: Remove files from the remote directory if they exist locally.
 - `-t`, `--time`: Schedule the upload at a specific time (format: 'HH:MM').
 - `-p`, `--path`: Upload only the specified file or directory.
@@ -54,7 +53,7 @@ You can run the script using Python. The script offers various options to custom
 
 1. Immediate Upload:
 ```bash
-python deployer.py --now
+python deployer.py
 ```
 2. Scheduled Upload:
 ```bash
@@ -64,20 +63,6 @@ python deployer.py --time "23:59"
 ```bash
 python deployer.py --path "/path/to/your/file_or_directory"
 ```
-
-### Interactive Mode
-If no arguments are provided, the script will prompt you to choose between uploading immediately or scheduling an upload:
-```bash
-python deployer.py
-```
-The script will present the following options:
-
-```bash
-1. Upload now.
-2. Set upload time.
-Enter number of choices. : 
-```
-Select an option to proceed with the desired action.
 
 ### Ignore List
 The script has a predefined list of files and directories to ignore during the upload process. You can customize this list by modifying the self.ignore_extensions and self.ignore_files variables in the script.

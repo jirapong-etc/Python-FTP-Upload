@@ -6,7 +6,7 @@ This is a Python-based FTP deployment script that allows you to upload files or 
 
 - **Immediate Upload**: Upload files or directories to the FTP server right away.
 - **Scheduled Upload**: Schedule uploads at a specific time.
-- **Fresh Mode**: Remove files from the remote directory if they exist locally.
+- **Fresh Mode**: Remove files from the remote directory if they not exist locally.
 - **Selective Upload**: Upload only a specified file or directory.
 - **Ignore List**: Skip specific files or directories during the upload process.
 
@@ -28,8 +28,8 @@ pip install argparse schedule
 1. Clone or download the script to your local machine:
 
 ```bash
-git clone https://github.com/your-repository/deployer.git
-cd deployer
+git clone https://github.com/jirapong-etc/Python-FTP-Upload.git
+cd Python-FTP-Upload
  ```
 2. Open the script (deployer.py) and update the following FTP server details with your credentials:
 
@@ -47,7 +47,7 @@ You can run the script using Python. The script offers various options to custom
 ### Command-Line Arguments
 - `-n`, `--now`: Immediately upload the files.
 - `-f`, `--fresh`: Remove files from the remote directory if they exist locally.
-- `-t`, `--time`: Schedule the upload at a specific time (format: 'HH').
+- `-t`, `--time`: Schedule the upload at a specific time (format: 'HH:MM').
 - `-p`, `--path`: Upload only the specified file or directory.
 
 ## Example Usage
